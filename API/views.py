@@ -84,6 +84,7 @@ class CreateAPI(CreateAPIView):
                 return Response({"status": "Failed"}, status=status.HTTP_406_NOT_ACCEPTABLE)
         else:
             return Response({"status":"failed","message":"Your Not Manager So You Have Not Rights To Register Emplyoee"})
+    
 
 # login user here
 class UserLogin(CreateAPIView):
