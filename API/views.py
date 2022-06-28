@@ -5,8 +5,9 @@ import random
 from django.contrib.auth import authenticate,login,logout
 from rest_framework.response import Response
 from API import serializer as s
+from API import serializer
 from API.models import EmployeeUser
-from rest_framework.generics import CreateAPIView,RetrieveAPIView,UpdateAPIView
+from rest_framework.generics import CreateAPIView,RetrieveAPIView,UpdateAPIView,DestroyAPIView
 from rest_framework.authentication import BasicAuthentication
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework import status
@@ -84,7 +85,61 @@ class CreateAPI(CreateAPIView):
                 return Response({"status": "Failed"}, status=status.HTTP_406_NOT_ACCEPTABLE)
         else:
             return Response({"status":"failed","message":"Your Not Manager So You Have Not Rights To Register Emplyoee"})
+
+# update Profile By manager here
+
+class UpdateUserAPI(UpdateAPIView):
     
+    authentication_classes = [BasicAuthentication,JWTAuthentication ]
+    permission_classes = [IsAuthenticated]
+    queryset = EmployeeUser
+    serializer_class = s.UserUpdateSerializer
+    
+    # send mail here with email and password to the employee email
+    def update(self, request):
+        user_manager = EmployeeUser.objects.get(email=request.user)
+        manager_serializer = s.CheckManagerSerializer(user_manager)
+        is_manager = manager_serializer.data['is_manager']
+        if is_manager:
+            user_data = request.data
+            user_email = request.data.get('email')
+            user_obj = EmployeeUser.objects.get(email=user_email)
+            serializer = s.UserUpdateSerializer(user_obj,data=user_data,partial=True)
+
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                return Response({"status": "success", "message":"Updated User Profile","profile":serializer.data}, status=status.HTTP_200_OK)
+            else:
+                return Response({"status": "Failed"}, status=status.HTTP_406_NOT_ACCEPTABLE)
+        else:
+            return Response({"status":"failed","message":"Your Not Manager So You Have Not Rights To Register Emplyoee"})
+
+# delete User Here only can manger do
+class DeleteUserAPI(DestroyAPIView):
+    
+    authentication_classes = [BasicAuthentication,JWTAuthentication ]
+    permission_classes = [IsAuthenticated]
+    queryset = EmployeeUser
+    serializer_class = s.UserDeleteSerializer
+    # send mail here with email and password to the employee email
+    def destroy(self, request,pk):
+        user_manager = EmployeeUser.objects.get(email=request.user)
+        manager_serializer = s.CheckManagerSerializer(user_manager)
+        is_manager = manager_serializer.data['is_manager']
+        if is_manager:
+            instance = self.get_object()
+            email = instance.email
+            user_serializer = self.get_serializer()
+            instance.delete()
+            
+
+            # if serializer.is_valid(raise_exception=True):
+            #     serializer.save()
+            return Response({"status": "success", "message":"Updated User Profile","profile":email}, status=status.HTTP_200_OK)
+            # else:
+            #     return Response({"status": "Failed"}, status=status.HTTP_406_NOT_ACCEPTABLE)
+        else:
+            return Response({"status":"failed","message":"Your Not Manager So You Have Not Rights To Register Emplyoee"})
 
 # login user here
 class UserLogin(CreateAPIView):
