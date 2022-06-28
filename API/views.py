@@ -5,7 +5,6 @@ import random
 from django.contrib.auth import authenticate,login,logout
 from rest_framework.response import Response
 from API import serializer as s
-from API import serializer
 from API.models import EmployeeUser
 from rest_framework.generics import CreateAPIView,RetrieveAPIView,UpdateAPIView,DestroyAPIView
 from rest_framework.authentication import BasicAuthentication
@@ -94,8 +93,6 @@ class UpdateUserAPI(UpdateAPIView):
     permission_classes = [IsAuthenticated]
     queryset = EmployeeUser
     serializer_class = s.UserUpdateSerializer
-    
-    # send mail here with email and password to the employee email
     def update(self, request):
         user_manager = EmployeeUser.objects.get(email=request.user)
         manager_serializer = s.CheckManagerSerializer(user_manager)
@@ -121,7 +118,6 @@ class DeleteUserAPI(DestroyAPIView):
     permission_classes = [IsAuthenticated]
     queryset = EmployeeUser
     serializer_class = s.UserDeleteSerializer
-    # send mail here with email and password to the employee email
     def destroy(self, request,pk):
         user_manager = EmployeeUser.objects.get(email=request.user)
         manager_serializer = s.CheckManagerSerializer(user_manager)
@@ -129,15 +125,8 @@ class DeleteUserAPI(DestroyAPIView):
         if is_manager:
             instance = self.get_object()
             email = instance.email
-            user_serializer = self.get_serializer()
             instance.delete()
-            
-
-            # if serializer.is_valid(raise_exception=True):
-            #     serializer.save()
             return Response({"status": "success", "message":"Updated User Profile","profile":email}, status=status.HTTP_200_OK)
-            # else:
-            #     return Response({"status": "Failed"}, status=status.HTTP_406_NOT_ACCEPTABLE)
         else:
             return Response({"status":"failed","message":"Your Not Manager So You Have Not Rights To Register Emplyoee"})
 
